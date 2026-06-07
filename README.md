@@ -1,6 +1,6 @@
 # ComfyUI Cloud Ready
 
-This repository contains a cloud-ready Docker environment for [ComfyUI](https://github.com/comfyanonymous/ComfyUI), specifically optimized for Vast.ai and RunPod.
+This repository contains a cloud-ready Docker environment for [ComfyUI](https://github.com/comfyanonymous/ComfyUI), specifically optimized for cloud providers.
 
 ## Features
 - **Dynamic Node Loading**: Automatically install custom nodes during the Docker build phase or at runtime via `data/nodes.yaml`.
