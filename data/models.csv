@@ -1,0 +1,33 @@
+#URL,file_name,model_directory
+
+# VAEs
+https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors,qwen_image_vae.safetensors,vae
+
+# CLIPs
+https://huggingface.co/mradermacher/Qwen2.5-VL-7B-Instruct-abliterated-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-abliterated.f16.gguf,Qwen2.5-VL-7B-Instruct-abliterated.f16.gguf,clip
+https://huggingface.co/mradermacher/Qwen2.5-VL-7B-Instruct-abliterated-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-abliterated.mmproj-f16.gguf,Qwen2.5-VL-7B-Instruct-abliterated.f16-mmproj-F16.gguf,clip
+
+# Text encoders
+
+# Diffusion models
+https://huggingface.co/vantagewithai/FireRed-Image-Edit-1.1-GGUF/resolve/main/FireRed-Image-Edit-1.1-Q8_0.gguf,FireRed-Image-Edit-1.1-Q8_0.gguf,unet
+
+# Checkpoints
+
+#Loras
+
+## FireRed Loras
+https://huggingface.co/FireRedTeam/FireRed-Image-Edit-LoRA-Zoo/resolve/main/FireRed-Image-Edit-1.0-Lightning-8steps-v1.1.safetensors,FireRed-Image-Edit-1.0-Lightning-8steps-v1.1.safetensors,loras/lightnings
+
+## Qwen Loras
+https://huggingface.co/peteromallet/Qwen-Image-Edit-InSubject/resolve/main/InSubject-0.5.safetensors,InSubject-0.5.safetensors,loras/edit_enhancers
+https://huggingface.co/lrzjason/Consistance_Edit_Lora/resolve/main/consistence_edit_v2.safetensors,consistence_edit_v2.safetensors,loras/edit_enhancers
+https://huggingface.co/flymy-ai/qwen-image-edit-inscene-lora/resolve/main/flymy_qwen_image_edit_inscene_lora.safetensors,flymy_qwen_image_edit_inscene_lora.safetensors,loras/edit_enhancers
+https://huggingface.co/X-GenGroup/PaCo-Qwen-Image-Edit-Lora/resolve/main/adapter_model.safetensors,paco_adapter_model.safetensors,loras/edit_enhancers
+https://huggingface.co/babayagaz/Qwen-Image-Edit-2511-Multiple-Angles-LoRA/blob/main/qwen-image-edit-2511-multiple-angles-lora.safetensors,qwen-image-edit-2511-multiple-angles-lora.safetensors,loras/camera_actions
+https://huggingface.co/houseofboern/Qwen_Edit_2511_Skin_Realism_V1/resolve/main/Qwen_Edit_2511_Skin_Realism_000001000.safetensors,Qwen_Edit_2511_Skin_Realism_000001000.safetensors,loras/photo_enhancers
+https://huggingface.co/datasets/dubsta/xmas/resolve/main/clothtransfer.safetensors,qwen_clothtransfer.safetensors,loras/clothes_actions
+https://huggingface.co/datasets/dubsta/xmas/resolve/main/extract-outfit_v3.safetensors,qwen_extract-outfit_v3.safetensors,loras/clothes_actions
+https://huggingface.co/UnifiedHorusRA/TheQwen2/resolve/main/Qwen_Edit_versatile_photo_poses/Qwen/Qwen%20Edit%E7%99%BE%E5%8F%98%E5%A7%BF%E5%8A%BF.safetensors,Qwen_Edit_versatile_photo_poses.safetensors,loras/poses_actions
+https://huggingface.co/lilylilith/AnyPose/resolve/main/2511-AnyPose-base-000006250.safetensors,2511-AnyPose-base.safetensors,loras/poses_actions
+https://huggingface.co/lilylilith/AnyPose/resolve/main/2511-AnyPose-helper-00006000.safetensors,2511-AnyPose-helper.safetensors,loras/poses_actions
