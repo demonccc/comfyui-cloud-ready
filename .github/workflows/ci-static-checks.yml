@@ -34,10 +34,12 @@ jobs:
       - name: Check YAML structure (yamllint)
         run: yamllint data/nodes.yaml
 
-      - name: Check Dockerfile (hadolint)
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: Dockerfile
+      - name: Check Dockerfiles (hadolint)
+        run: |
+          for f in Dockerfile.*; do
+            echo "🔍 Checking $f"
+            docker run --rm -i hadolint/hadolint < "$f"
+          done
 
       - name: Check CSV structure
         run: |

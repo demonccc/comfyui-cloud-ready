@@ -1,18 +1,33 @@
 name: Docker Build and Publish
 
 on:
-  pull_request:
+  push:
     branches: [ "main" ]
-    types: [closed]
+  release:
+    types: [published]
 
 jobs:
-  build-and-push:
-    # Run only when a Pull Request to main is closed AND merged
-    if: github.event.pull_request.merged == true
+  # =========================================================
+  # SCENARIO A: GITHUB RELEASE TRIGGER
+  # =========================================================
+  release-publish:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Parse Release Tag
+        id: parse_tag
+        run: |
+          # Expected format: VX-cloudprovider (e.g. V1-vastai)
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          PROVIDER=$(echo "$TAG_NAME" | cut -d'-' -f2)
+          echo "provider=$PROVIDER" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -20,16 +35,99 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/comfyui-cloud-ready
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile.${{ steps.parse_tag.outputs.provider }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/comfyui-cloud-ready:${{ steps.parse_tag.outputs.tag }}
+          cache-from: type=gha,scope=${{ steps.parse_tag.outputs.provider }}
+          cache-to: type=gha,mode=max,scope=${{ steps.parse_tag.outputs.provider }}
+
+  # =========================================================
+  # SCENARIO B: PUSH TO MAIN TRIGGER
+  # =========================================================
+  push-detect:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      common: ${{ steps.filter.outputs.common }}
+      dockerfiles: ${{ steps.get-dockerfiles.outputs.files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Path Filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            common:
+              - 'data/**'
+              - 'scripts/**'
+              - 'workflows/**'
+      - name: Get Changed Dockerfiles
+        id: get-dockerfiles
+        run: |
+          # List all Dockerfile.* files in the repo
+          FILES=$(ls Dockerfile.* | jq -R -s -c 'split("\n")[:-1]')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+  push-publish:
+    needs: push-detect
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        file: ${{ fromJson(needs.push-detect.outputs.dockerfiles) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Check specific dockerfile changes
+        id: file-filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            changed:
+              - '${{ matrix.file }}'
+
+      - name: Decide to build
+        id: decision
+        run: |
+          if [ "${{ needs.push-detect.outputs.common }}" == "true" ] || [ "${{ steps.file-filter.outputs.changed }}" == "true" ]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+          else
+            echo "build=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.decision.outputs.build == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: steps.decision.outputs.build == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Provider
+        id: ext
+        if: steps.decision.outputs.build == 'true'
+        run: |
+          # Matrix file is e.g. Dockerfile.vastai -> vastai
+          PROVIDER=$(echo "${{ matrix.file }}" | cut -d'.' -f2)
+          echo "provider=$PROVIDER" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        if: steps.decision.outputs.build == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/comfyui-cloud-ready:${{ github.sha }}
+          cache-from: type=gha,scope=${{ steps.ext.outputs.provider }}
+          cache-to: type=gha,mode=max,scope=${{ steps.ext.outputs.provider }}
