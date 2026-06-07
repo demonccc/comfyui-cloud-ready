@@ -1,10 +1,12 @@
+# hadolint ignore=DL3007
 FROM vastai/comfy:latest
 
 # Configure ComfyUI environment variables
 ENV COMFY_ARGS="--listen 0.0.0.0 --port 8188 --disable-auto-launch --enable-cors-header --fast fp16_accumulation --reserve-vram 2 --cuda-malloc --async-offload"
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
     aria2 \
     psmisc \
     vim \
