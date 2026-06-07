@@ -1,15 +1,15 @@
-name: CI Checks
+name: CI Static Checks
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - '**'
   pull_request:
     branches: [ "main" ]
 
 jobs:
   lint-and-check:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
