@@ -5,13 +5,9 @@ set -e
 
 # --- CONFIGURATION ---
 COMFYUI_DIR="/workspace/ComfyUI"
-CSV_NODES="/workspace/data/nodes.csv"
 CSV_MODELS="/workspace/data/models.csv"
 BASE_MODELS_DIR="${COMFYUI_DIR}/models"
-WORKFLOWS_TARGET="${COMFYUI_DIR}/user/default/workflows"
-WORKFLOWS_SOURCE="/workspace/workflows"
 VENV_DIR="/venv/main"
-PIP_BIN="${VENV_DIR}/bin/pip"
 PYTHON_BIN="${VENV_DIR}/bin/python"
 
 sync_nodes() {
@@ -105,7 +101,8 @@ sync_models_env() {
         local remainder="${var#EXTRA_}"
         remainder="${remainder/_//}"
         # Lowercase the result
-        local subdir_type=$(echo "$remainder" | tr '[:upper:]' '[:lower:]')
+        local subdir_type
+        subdir_type=$(echo "$remainder" | tr '[:upper:]' '[:lower:]')
         
         echo "📂 Processing env $var -> dir $subdir_type"
         
