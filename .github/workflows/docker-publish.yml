@@ -1,8 +1,12 @@
 name: Docker Build and Publish
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    workflows: ["CI Static Checks"]
+    types:
+      - completed
+    branches:
+      - main
   release:
     types: [published]
 
@@ -47,7 +51,7 @@ jobs:
   # SCENARIO B: PUSH TO MAIN TRIGGER
   # =========================================================
   push-detect:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     outputs:
       common: ${{ steps.filter.outputs.common }}
@@ -73,7 +77,7 @@ jobs:
 
   push-publish:
     needs: push-detect
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -126,4 +130,4 @@ jobs:
           context: .
           file: ${{ matrix.file }}
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/comfyui-cloud-ready:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/comfyui-cloud-ready:${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
