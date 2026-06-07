@@ -1,17 +1,15 @@
 name: Docker Build and Publish
 
 on:
-  push:
+  pull_request:
     branches: [ "main" ]
-    # Uncomment the following to also trigger on release tags
-    # tags: [ 'v*.*.*' ]
+    types: [closed]
 
 jobs:
   build-and-push:
-    # We depend on the CI checks passing first
-    needs: [] # (Optional) If you want to merge both into one workflow or use workflow_call, for now they run in parallel.
+    # Run only when a Pull Request to main is closed AND merged
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,7 +24,6 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # Change this to your actual Docker Hub image name if different
           images: ${{ secrets.DOCKERHUB_USERNAME }}/comfyui-cloud-ready
 
       - name: Build and push Docker image
