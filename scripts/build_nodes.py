@@ -4,7 +4,8 @@ import subprocess
 import yaml
 
 YAML_PATH = "/workspace/data/nodes.yaml"
-CUSTOM_NODES_DIR = "/workspace/ComfyUI/custom_nodes"
+COMFYUI_DIR = os.environ.get("COMFYUI_DIR", "/workspace/ComfyUI")
+CUSTOM_NODES_DIR = os.path.join(COMFYUI_DIR, "custom_nodes")
 PIP_BIN = "/venv/main/bin/pip"
 
 

@@ -10,6 +10,12 @@ BASE_MODELS_DIR="${COMFYUI_DIR}/models"
 VENV_DIR="/venv/main"
 PYTHON_BIN="${VENV_DIR}/bin/python"
 
+# Move staged files into the persistent workspace
+mkdir -p "${COMFYUI_DIR}/custom_nodes" "${COMFYUI_DIR}/user/default/workflows"
+mv /workspace/staging/ComfyUI/custom_nodes/* "${COMFYUI_DIR}/custom_nodes/" 2>/dev/null || true
+mv /workspace/staging/ComfyUI/user/default/workflows/* "${COMFYUI_DIR}/user/default/workflows/" 2>/dev/null || true
+rm -rf /workspace/staging
+
 sync_nodes() {
     echo "🔄 Updating Custom Nodes (Runtime)..."
     $PYTHON_BIN /workspace/scripts/build_nodes.py runtime
