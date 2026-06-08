@@ -19,10 +19,10 @@ COPY scripts /workspace/scripts
 
 # Pre-bake heavy nodes by parsing nodes.yaml
 RUN /venv/main/bin/pip install pyyaml && \
-    /venv/main/bin/python /workspace/scripts/build_nodes.py build
+    COMFYUI_DIR="/workspace/staging/ComfyUI" /venv/main/bin/python /workspace/scripts/build_nodes.py build
 
-# Copy workflows content into the specified directory
-COPY workflows /workspace/ComfyUI/user/default/workflows
+# Copy workflows content into the staging directory
+COPY workflows /workspace/staging/ComfyUI/user/default/workflows
 
 # Make sure the configure script is executable
 RUN chmod +x /workspace/scripts/configure.sh

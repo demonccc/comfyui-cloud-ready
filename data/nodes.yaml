@@ -1,6 +1,4 @@
 nodes:
-  - url: "https://github.com/ltdrdata/ComfyUI-Manager.git"
-    install_phase: "runtime"
   - url: "https://github.com/kijai/ComfyUI_essentials.git"
     install_phase: "runtime"
   - url: "https://github.com/huchukato/comfy-tagcomplete.git"
