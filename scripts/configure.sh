@@ -5,10 +5,105 @@ set -e
 
 # --- CONFIGURATION ---
 COMFYUI_DIR="/workspace/ComfyUI"
-CSV_MODELS="/workspace/data/models.csv"
 BASE_MODELS_DIR="${COMFYUI_DIR}/models"
 VENV_DIR="/venv/main"
-PYTHON_BIN="${VENV_DIR}/bin/python"
+PYTHON_BIN="${PYTHON_BIN:-${VENV_DIR}/bin/python}"
+[ -x "$PYTHON_BIN" ] || PYTHON_BIN="$(command -v python3 || echo "${VENV_DIR}/bin/python")"
+
+update_comfyui() {
+    echo "🔄 Updating ComfyUI core to latest version..."
+    if [ -d "${COMFYUI_DIR}/.git" ]; then
+        git -C "${COMFYUI_DIR}" fetch origin || true
+        git -C "${COMFYUI_DIR}" checkout master 2>/dev/null || git -C "${COMFYUI_DIR}" checkout main 2>/dev/null || true
+        git -C "${COMFYUI_DIR}" pull origin master 2>/dev/null || git -C "${COMFYUI_DIR}" pull 2>/dev/null || true
+
+        if [ -f "${COMFYUI_DIR}/requirements.txt" ]; then
+            echo "📦 Updating ComfyUI dependencies..."
+            "$PYTHON_BIN" -m pip install --no-cache-dir -r "${COMFYUI_DIR}/requirements.txt" || true
+        fi
+    else
+        echo "⚠️ ComfyUI directory (${COMFYUI_DIR}) is not a git repository."
+    fi
+}
+
+sync_nodes() {
+    echo "🔄 Updating Custom Nodes (Runtime)..."
+    $PYTHON_BIN /workspace/scripts/build_nodes.py runtime
+}
+
+install_models() {
+    echo "🔄 Running Model Installer (Runtime)..."
+    /workspace/scripts/install_models.sh /workspace/data/models.csv
+}
+
+install_llama_cpp() {
+    local LLAMA_CPP_WHEEL="https://github.com/JamePeng/llama-cpp-python/releases/download/v0.3.43-cu131-linux-20260718/llama_cpp_python-0.3.43+cu131-cp312-cp312-linux_x86_64.whl"
+    local REQUIRED_VERSION="0.3.43"
+
+    echo "🔍 Checking llama-cpp-python version (required >= ${REQUIRED_VERSION})..."
+
+    if "$PYTHON_BIN" -c "
+import sys
+from importlib.metadata import version
+
+req = sys.argv[1]
+try:
+    v = version('llama-cpp-python').split('+')[0]
+    v_parts = [int(x) for x in v.split('.') if x.isdigit()]
+    req_parts = [int(x) for x in req.split('.') if x.isdigit()]
+    if v_parts >= req_parts:
+        print(f'✅ llama-cpp-python is already installed and up to date: {v}')
+        sys.exit(0)
+    print(f'⚠️ llama-cpp-python version {v} is lower than required {req}')
+    sys.exit(1)
+except Exception:
+    sys.exit(1)
+" "$REQUIRED_VERSION"; then
+        return 0
+    fi
+
+    echo "📦 Installing llama-cpp-python (>= ${REQUIRED_VERSION})..."
+
+    "$PYTHON_BIN" -m pip install \
+        --upgrade \
+        --force-reinstall \
+        --no-cache-dir \
+        "$LLAMA_CPP_WHEEL"
+
+    # Verificación posterior
+    if "$PYTHON_BIN" -c "import llama_cpp" >/dev/null 2>&1; then
+        local installed_version
+        installed_version=$(
+            "$PYTHON_BIN" -c \
+                "from importlib.metadata import version; print(version('llama-cpp-python'))" \
+                2>/dev/null || echo "unknown"
+        )
+
+        echo "✅ llama-cpp-python installed successfully: ${installed_version}"
+    else
+        echo "❌ llama-cpp-python was installed but cannot be imported"
+        return 1
+    fi
+}
+
+install_transformers() {
+    echo "🔍 Checking transformers package..."
+    if ! "$PYTHON_BIN" -c "import transformers" >/dev/null 2>&1; then
+        echo "📦 Installing transformers..."
+        "$PYTHON_BIN" -m pip install --no-cache-dir transformers
+    else
+        echo "✅ transformers is already installed."
+    fi
+}
+
+# --- EXECUTION ---
+if [ "${1:-}" == "build" ]; then
+    echo "🏗️ Running Build-time configuration..."
+    update_comfyui
+    install_llama_cpp
+    install_transformers
+    exit 0
+fi
 
 # Move staged files into the persistent workspace
 mkdir -p "${COMFYUI_DIR}/custom_nodes" "${COMFYUI_DIR}/user/default/workflows"
@@ -16,123 +111,9 @@ mv /workspace/staging/ComfyUI/custom_nodes/* "${COMFYUI_DIR}/custom_nodes/" 2>/d
 mv /workspace/staging/ComfyUI/user/default/workflows/* "${COMFYUI_DIR}/user/default/workflows/" 2>/dev/null || true
 rm -rf /workspace/staging
 
-sync_nodes() {
-    echo "🔄 Updating Custom Nodes (Runtime)..."
-    $PYTHON_BIN /workspace/scripts/build_nodes.py runtime
-}
-
-# Helper to download a single model
-download_model() {
-    local url="$1"
-    local filename="$2"
-    local subdir_type="$3"
-    
-    local dest_dir="$BASE_MODELS_DIR/$subdir_type"
-    mkdir -p "$dest_dir"
-    local target_path="$dest_dir/$filename"
-
-    if [ ! -f "$target_path" ]; then
-        echo "  >> Processing: $filename"
-        
-        # --- URL CONSTRUCTION WITH TOKEN ---
-        local FINAL_URL="${url}"
-        if [[ "$url" == *"civitai."* && -n "$CIVITAI_TOKEN" ]]; then
-            # If the URL already has '?', we append with '&', otherwise, we start with '?'
-            [[ "$url" == *"?"* ]] && FINAL_URL="${url}&token=${CIVITAI_TOKEN}" || FINAL_URL="${url}?token=${CIVITAI_TOKEN}"
-        fi
-
-        # --- STEP 1: Aria2c ---
-        # Lowering connections to 4 for Civitai to avoid 429/400
-        local CONNS=16
-        [[ "$url" == *"civitai."* ]] && CONNS=4
-
-        aria2c -x "$CONNS" -s "$CONNS" -k 1M --console-log-level=error --summary-interval=0 \
-               --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
-               -d "$dest_dir" -o "$filename" "${FINAL_URL}" || true
-
-        # --- STEP 2: Verification with 'file' ---
-        if [ -f "$target_path" ]; then
-            if file "$target_path" | grep -iq "HTML document"; then
-                echo "    ⚠️ Corrupt file (HTML). Deleting for rescue..."
-                rm -f "$target_path"
-            fi
-        fi
-
-        # --- STEP 3: Rescue with Wget (Direct URL Token) ---
-        if [ ! -f "$target_path" ]; then
-            echo "    🚀 Retrying rescue with Wget (Direct URL Token)..."
-            
-            # Using the same FINAL_URL that already has the token included
-            if ! wget -q --show-progress \
-                      --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
-                      --no-check-certificate \
-                      --content-disposition "${FINAL_URL}" -O "$target_path"; then
-                echo "    ❌ Final error in $filename"
-                rm -f "$target_path"
-            else
-                # Final verification
-                if file "$target_path" | grep -iq "HTML document"; then
-                    echo "    ❌ Error: Even with token in URL it downloaded an HTML."
-                    rm -f "$target_path"
-                else
-                    echo "    ✅ Rescue successful."
-                fi
-            fi
-        else
-            echo "    ✅ Successful download with Aria2c."
-        fi
-    fi
-}
-
-# --- MODEL SYNCHRONIZATION FROM CSV ---
-sync_models_csv() {
-    echo "🔄 Synchronizing Models from CSV..."
-    if [ ! -f "$CSV_MODELS" ]; then echo "⚠️ Models CSV not found"; return; fi
-
-    sed 1d "$CSV_MODELS" | tr -d '\r' | while IFS=, read -r url filename subdir_type; do
-        [[ -z "$url" || "$url" == \#* ]] && continue
-        download_model "$url" "$filename" "$subdir_type"
-    done
-}
-
-# --- MODEL SYNCHRONIZATION FROM ENV VARS ---
-sync_models_env() {
-    echo "🔄 Synchronizing Models from EXTRA_ Environment Variables..."
-    
-    # compgen -v lists all variables, we grep for EXTRA_
-    for var in $(compgen -v | grep '^EXTRA_'); do
-        local val="${!var}"
-        
-        # Strip EXTRA_ and replace first underscore with slash
-        local remainder="${var#EXTRA_}"
-        remainder="${remainder/_//}"
-        # Lowercase the result
-        local subdir_type
-        subdir_type=$(echo "$remainder" | tr '[:upper:]' '[:lower:]')
-        
-        echo "📂 Processing env $var -> dir $subdir_type"
-        
-        # Elements separated by ;
-        IFS=';' read -ra ELEMENTS <<< "$val"
-        for element in "${ELEMENTS[@]}"; do
-            [[ -z "$element" ]] && continue
-            
-            local url="${element%%,*}"
-            local filename="${element#*,}"
-            
-            # If no comma was present, filename == url
-            if [ "$url" == "$filename" ]; then
-                local clean_url="${url%%\?*}"
-                filename=$(basename "$clean_url")
-            fi
-            
-            download_model "$url" "$filename" "$subdir_type"
-        done
-    done
-}
-
-# --- EXECUTION ---
+update_comfyui
 sync_nodes
-sync_models_csv
-sync_models_env
+install_llama_cpp
+install_transformers
+install_models
 )

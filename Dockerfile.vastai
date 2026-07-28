@@ -1,4 +1,4 @@
-FROM vastai/comfy:v0.23.0-cuda-13.2-py312
+FROM vastai/comfy:v0.28.0-cuda-13.2-py312
 
 # Configure ComfyUI environment variables
 ENV COMFY_ARGS="--listen 0.0.0.0 --port 8188 --disable-auto-launch --enable-cors-header --fast fp16_accumulation --reserve-vram 2 --cuda-malloc --async-offload"
@@ -17,15 +17,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY data /workspace/data
 COPY scripts /workspace/scripts
 
-# Pre-bake heavy nodes by parsing nodes.yaml
-RUN /venv/main/bin/pip install pyyaml && \
-    COMFYUI_DIR="/workspace/staging/ComfyUI" /venv/main/bin/python /workspace/scripts/build_nodes.py build
+# Pre-bake heavy nodes and run build-time updates (ComfyUI upgrade, llama-cpp, transformers)
+RUN chmod +x /workspace/scripts/*.sh && \
+    /venv/main/bin/pip install pyyaml "huggingface_hub[cli]" transformers && \
+    COMFYUI_DIR="/workspace/staging/ComfyUI" /venv/main/bin/python /workspace/scripts/build_nodes.py build && \
+    /workspace/scripts/configure.sh build
 
 # Copy workflows content into the staging directory
 COPY workflows /workspace/staging/ComfyUI/user/default/workflows
 
-# Make sure the configure script is executable
-RUN chmod +x /workspace/scripts/configure.sh
+# Make sure scripts are executable
+RUN chmod +x /workspace/scripts/*.sh
 
 # Create a Vast.ai boot script to run the configuration during the provisioning phase.
 # The configure.sh script is wrapped in a subshell to prevent `set -e` from leaking
