@@ -66,7 +66,11 @@ def resolve_filename(url):
         req_headers["Authorization"] = f"Bearer {hf_token}"
 
     fetch_url = url
-    if "civitai.com" in fetch_url and civitai_token and "token=" not in fetch_url:
+    if (
+        "civitai.com" in fetch_url
+        and civitai_token
+        and "token=" not in fetch_url
+    ):
         sep = "&" if "?" in fetch_url else "?"
         fetch_url = f"{fetch_url}{sep}token={civitai_token}"
 
