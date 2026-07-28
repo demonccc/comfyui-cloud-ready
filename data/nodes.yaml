@@ -81,7 +81,7 @@ nodes:
     install_phase: "runtime"
   - url: "https://github.com/lbouaraba/comfyui-krea2edit"
     install_phase: "runtime"
-  - url: "https://github.com/RedNodeAI/ComfyUI-Krea2Moodboard.git" 
+  - url: "https://github.com/RedNodeAI/ComfyUI-Krea2Moodboard.git"
     install_phase: "runtime"
   - url: "https://github.com/blue-pen5805/ComfyUI-krea2-negpip"
     install_phase: "runtime"
@@ -91,7 +91,3 @@ nodes:
     install_phase: "runtime"
   - url: "https://github.com/lonecatone23/comfyUI-BlackwellAttentionFix.git"
     install_phase: "runtime"
-
-
-
-
