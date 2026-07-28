@@ -5,7 +5,6 @@ set -e
 
 # --- CONFIGURATION ---
 COMFYUI_DIR="/workspace/ComfyUI"
-BASE_MODELS_DIR="${COMFYUI_DIR}/models"
 VENV_DIR="/venv/main"
 PYTHON_BIN="${PYTHON_BIN:-${VENV_DIR}/bin/python}"
 [ -x "$PYTHON_BIN" ] || PYTHON_BIN="$(command -v python3 || echo "${VENV_DIR}/bin/python")"
