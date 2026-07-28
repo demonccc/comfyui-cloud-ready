@@ -41,8 +41,8 @@ jobs:
 
       - name: Check CSV structure
         run: |
-          # Ensures models.csv is properly formatted and parseable
-          if python -c 'import csv; list(csv.reader(open("data/models.csv")))'; then
+          # Ensures models.csv is properly formatted (2 columns: url,folder), ignoring comments starting with #
+          if python -c 'import csv; rows = [r for r in csv.reader(open("data/models.csv")) if r and not r[0].strip().startswith("#")]; assert all(len(r) == 2 for r in rows)'; then
             echo "✅ CSV structure is valid."
           else
             echo "❌ CSV validation failed!"
