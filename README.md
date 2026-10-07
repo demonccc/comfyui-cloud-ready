@@ -33,11 +33,17 @@ https://civitai.com/api/download/models/12345,checkpoints
 # Hugging Face models
 hf://user/repo/model.safetensors,loras
 hf://user/repo,checkpoints
+hf://user/comfyui-models,
 ```
 
 **`hf://` URL Format:**
 - Single File: `hf://user/repo/path/to/file.safetensors,folder`
-- Full Repo / Dir: `hf://user/repo,folder`
+- Full Repo into a target folder: `hf://user/repo,folder`
+- Full ComfyUI model repo preserving its own directory layout: `hf://user/repo,`
+
+When the second CSV column is empty for a full Hugging Face repository, the repository is synchronized directly into `ComfyUI/models`. Hugging Face preserves the paths stored in the repository, so `loras/model.safetensors` becomes `ComfyUI/models/loras/model.safetensors`, `diffusion_models/model.safetensors` becomes `ComfyUI/models/diffusion_models/model.safetensors`, and so on.
+
+The default `data/models.csv` uses this mode with `demonccc/comfyui-models`. You can still append individual HTTP, Civitai, or `hf://` file entries to extend the image without changing the synchronization mechanism.
 
 #### Hugging Face Main Repository (`HF_MAIN_REPO`)
 Set the environment variable `HF_MAIN_REPO="user/repository"` to automatically sync an entire Hugging Face repository into `/workspace/ComfyUI/models`.

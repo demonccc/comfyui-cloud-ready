@@ -174,7 +174,15 @@ download_hf_model() {
     local raw_url="$1"
     local folder="$2"
 
-    local dest_dir="${BASE_MODELS_DIR}/${folder}"
+    local dest_dir
+    if [ -n "$folder" ]; then
+        dest_dir="${BASE_MODELS_DIR}/${folder}"
+    else
+        # Empty folder means "use the ComfyUI models root".
+        # For a full HF repository, hf download preserves the repository
+        # directory structure under --local-dir.
+        dest_dir="${BASE_MODELS_DIR}"
+    fi
     mkdir -p "$dest_dir"
 
     local hf_path="${raw_url#hf://}"
@@ -198,7 +206,11 @@ download_hf_model() {
     else
         # user/repo
         local repo="$hf_path"
-        echo "  >> HF Repo download: ${repo} -> ${folder}"
+        if [ -n "$folder" ]; then
+            echo "  >> HF Repo download: ${repo} -> ${folder}"
+        else
+            echo "  >> HF Repo sync: ${repo} -> ComfyUI/models (preserving repository folders)"
+        fi
         run_hf download --local-dir "$dest_dir" "$repo"
     fi
 }
