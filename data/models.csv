@@ -1,23 +1,6 @@
 #url,folder
 
-#CLIP
-hf://makisekurisu-jp/ComfyUI-Qwen3-VL-GGUF/Qwen3.5-9B-mmproj-BF16.gguf,clip
-hf://makisekurisu-jp/ComfyUI-Qwen3-VL-GGUF/Huihui-Qwen3.5-9B-abliterated.i1-IQ4_XS.gguf,clip
-
-# BBOX
-hf://Bingsu/adetailer/person_yolov8m-seg.pt,ultralytics/bbox
-hf://Bingsu/adetailer/face_yolov8m.pt,ultralytics/bbox
-hf://Bingsu/adetailer/deepfashion2_yolov8s-seg.pt,ultralytics/box
-hf://Bingsu/adetailer/hand_yolov8s.pt,ultralytics/bbox
-
-# Face models
-## Restore
-hf://Gourieff/ReActor/models/facerestore_models/RestoreFormer_PP.onnx,facerestore_models
-## Detection
-hf://xinntao/facexlib/detection_Resnet50_Final.pth,facedetection
-
-# Upscaling
-hf://Phhofm/models/4xLSDIRCompact3/4xLSDIRCompactC3.pth,upscale_models
-hf://Phhofm/models/4xLSDIRCompact3/4xLSDIRCompactCR3.pth,upscale_models
-hf://Phhofm/models/4xLSDIRCompact3/4xLSDIRCompactN.pth,upscale_models
-hf://Phhofm/models/4xLSDIRCompact3/4xLSDIRCompactR3.pth,upscale_models
+# Primary ComfyUI model repository.
+# Empty folder = sync the full Hugging Face repository directly into ComfyUI/models,
+# preserving repository directories such as loras/, diffusion_models/, clip/, etc.
+hf://demonccc/comfyui-models,
